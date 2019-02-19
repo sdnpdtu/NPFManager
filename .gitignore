@@ -1,0 +1,7 @@
+ngpaas-pm-rest/target/*
+!ngpaas-pm-rest/target/*.oar
+ngpaas-pm-api/target/*
+/.idea
+/out
+/.settings
+*.iml
