@@ -1,4 +1,4 @@
-package eu.ngpaas.pmLib;
+package eu.ngpaas.pmlib;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -9,7 +9,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 
-public class PolicyCollector implements Collector<PolicyRule, CopyOnWriteArrayList<PolicyRule>, CopyOnWriteArrayList<PolicyRule>> {
+public class PolicyCollector
+    implements Collector<PolicyRule, CopyOnWriteArrayList<PolicyRule>, CopyOnWriteArrayList<PolicyRule>> {
 
     @Override
     public Supplier<CopyOnWriteArrayList<PolicyRule>> supplier() {

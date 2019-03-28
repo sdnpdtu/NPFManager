@@ -15,10 +15,10 @@
   ~ limitations under the License.
   -->
 <features xmlns="http://karaf.apache.org/xmlns/features/v1.2.0" name="${project.artifactId}-${project.version}">
-    <feature name="${project.artifactId}" version="${project.version}"
-             description="${project.description}">
-       <feature>onos-api</feature>
-        <bundle>mvn:${project.groupId}/ngpaas-pm-api/${project.version}</bundle>
-        <bundle>mvn:${project.groupId}/ngpaas-pm-rest/${project.version}</bundle>
-    </feature>
+  <feature name="${project.artifactId}" version="${project.version}"
+           description="${project.description}">
+    <feature>onos-api</feature>
+    <bundle>mvn:${project.groupId}/ngpaas-pm-api/${project.version}</bundle>
+    <bundle>mvn:${project.groupId}/ngpaas-pm-rest/${project.version}</bundle>
+  </feature>
 </features>

@@ -15,21 +15,28 @@
  */
 package eu.ngpaas.pmrest.rest;
 
-import eu.ngpaas.pmLib.PolicyRule;
-import eu.ngpaas.pmLib.PolicyRules;
-import eu.ngpaas.pmLib.PolicyState;
-import eu.ngpaas.pmLib.SimpleResponse;
-import eu.ngpaas.pmrest.core.PolicyFrameworkService;
+import java.util.List;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.ngpaas.pmlib.PolicyRule;
+import eu.ngpaas.pmlib.PolicyRules;
+import eu.ngpaas.pmlib.PolicyState;
+import eu.ngpaas.pmlib.SimpleResponse;
+import eu.ngpaas.pmrest.core.PolicyFrameworkService;
 import org.onosproject.rest.AbstractWebResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 @Path("")
 public class AppWebResource extends AbstractWebResource {
@@ -42,8 +49,8 @@ public class AppWebResource extends AbstractWebResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getPolicies() {
         return ok(policyFrameworkService.getAllPolicies().toJSONString()).
-                status(200).
-                build();
+                                                                             status(200).
+                                                                             build();
     }
 
     @GET
@@ -51,41 +58,41 @@ public class AppWebResource extends AbstractWebResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getActivePolicies() {
         return ok(policyFrameworkService.getActivePolicies().toJSONString()).
-                status(200).
-                build();
+                                                                                status(200).
+                                                                                build();
     }
 
     @GET
     @Path("policies/id/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getPolicy(@PathParam("id")int id) {
+    public Response getPolicy(@PathParam("id") int id) {
 
         PolicyRule pr = policyFrameworkService.getPolicyById(id);
 
         if (pr == null) {
 
-            SimpleResponse sr = new SimpleResponse("No Policy with ID " + 
-                String.valueOf(id), false);
+            SimpleResponse sr = new SimpleResponse("No Policy with ID " +
+                                                   String.valueOf(id), false);
 
             log.info("No Policy with ID " + String.valueOf(id));
 
             return ok(sr.toJSON())
-                    .status(sr.getCode())
-                    .type(MediaType.APPLICATION_JSON)
-                    .build();
+                .status(sr.getCode())
+                .type(MediaType.APPLICATION_JSON)
+                .build();
         } else {
             PolicyRules prs = new PolicyRules();
             prs.addRule(pr);
             return ok(prs.toJSONString()).
-                    status(200).
-                    build();
+                                             status(200).
+                                             build();
         }
     }
 
     @GET
     @Path("policies/state/{state}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getPoliciesByState(@PathParam("state")String state) {
+    public Response getPoliciesByState(@PathParam("state") String state) {
         return ok(policyFrameworkService.getPoliciesByState(PolicyState.fromString(state)).toJSONString())
             .status(200)
             .build();
@@ -94,7 +101,7 @@ public class AppWebResource extends AbstractWebResource {
     @GET
     @Path("policies/type/{type}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getPolicyByType(@PathParam("type")String type) {
+    public Response getPolicyByType(@PathParam("type") String type) {
         return ok(policyFrameworkService.getPoliciesByType(type).toJSONString())
             .status(200)
             .build();
@@ -103,34 +110,34 @@ public class AppWebResource extends AbstractWebResource {
     @GET
     @Path("policies/num/")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getNumberOfPolicies(){
+    public Response getNumberOfPolicies() {
 
         int num_of_policies = policyFrameworkService.getNumberOfPolicies();
         SimpleResponse sr = new SimpleResponse(
-                "The number of policies is "+String.valueOf(num_of_policies),
-                true
+            "The number of policies is " + String.valueOf(num_of_policies),
+            true
         );
 
         return ok(sr.toJSON()).
-                status(sr.getCode()).
-                build();
+                                  status(sr.getCode()).
+                                  build();
     }
 
     @GET
     @Path("policies/types/")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getPolicyTypes(){
+    public Response getPolicyTypes() {
 
         List<String> policyTypes = policyFrameworkService.getPolicyTypes();
         SimpleResponse sr;
-        if (!policyTypes.isEmpty()){
-             sr = new SimpleResponse(policyTypes, true);
-        } else{
+        if (!policyTypes.isEmpty()) {
+            sr = new SimpleResponse(policyTypes, true);
+        } else {
             sr = new SimpleResponse("No policy types available", true);
         }
         return ok(sr.toJSON()).
-                status(sr.getCode()).
-                build();
+                                  status(sr.getCode()).
+                                  build();
     }
 
     @POST
@@ -146,138 +153,139 @@ public class AppWebResource extends AbstractWebResource {
         SimpleResponse sr;
 
         PolicyRules policyRules = policyFrameworkService.parsePolicyRules(body);
-        if (policyRules == null){
+        if (policyRules == null) {
             sr = new SimpleResponse("Error when parsing the JSON structure", false);
             return ok(sr.toJSON())
-                    .status(400)
-                    .type(MediaType.APPLICATION_JSON)
-                    .build();
-        } else if (policyRules.getPolicyRules().isEmpty()){
+                .status(400)
+                .type(MediaType.APPLICATION_JSON)
+                .build();
+        } else if (policyRules.getPolicyRules().isEmpty()) {
             sr = new SimpleResponse("Empty policy provided", false);
             return ok(sr.toJSON())
-                    .status(400)
-                    .type(MediaType.APPLICATION_JSON)
-                    .build();
+                .status(400)
+                .type(MediaType.APPLICATION_JSON)
+                .build();
         } else {
-            for (PolicyRule pr : policyRules.getPolicyRules()){
-                if (pr.getPriority() < 1 || pr.getPolicyConditions().isEmpty() 
-                    || pr.getPolicyActions().isEmpty() || pr.getType()==null 
-                    || pr.getForm() == null){
+            for (PolicyRule pr : policyRules.getPolicyRules()) {
+                if (pr.getPriority() < 1 || pr.getPolicyConditions().isEmpty()
+                    || pr.getPolicyActions().isEmpty() || pr.getType() == null
+                    || pr.getForm() == null) {
                     sr = new SimpleResponse("Invalid policy provided. You MUST" +
-                     " provide a policy with a priority higher than 0, of a valid" +
-                     " type and form, with non-empty conditions and actions", false);
+                                            " provide a policy with a priority higher than 0, of a valid" +
+                                            " type and form, with non-empty conditions and actions", false);
                     return ok(sr.toJSON())
-                            .status(400)
-                            .type(MediaType.APPLICATION_JSON)
-                            .build();
+                        .status(400)
+                        .type(MediaType.APPLICATION_JSON)
+                        .build();
                 }
             }
         }
         PolicyRules processed_prs = new PolicyRules();
 
-        for (PolicyRule pr: policyRules.getPolicyRules()){
-                policyFrameworkService.preprocess(pr);
+        for (PolicyRule pr : policyRules.getPolicyRules()) {
+            policyFrameworkService.preprocess(pr);
             processed_prs.getPolicyRules().add(pr);
         }
         sr = policyFrameworkService.pushPolicies(processed_prs);
 
         return ok(sr.toJSON())
-                .status(sr.getCode())
-                .build();
+            .status(sr.getCode())
+            .build();
     }
 
     @GET
     @Path("policies/activate/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response activatePolicyById(@PathParam("id")int id){
+    public Response activatePolicyById(@PathParam("id") int id) {
 
         SimpleResponse sr = policyFrameworkService.activatePolicyById(id);
 
         return ok(sr.toJSON()).
-                status(sr.getCode()).
-                build();
+                                  status(sr.getCode()).
+                                  build();
     }
 
     @DELETE
     @Path("policies/deactivate/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deactivatePolicyById(@PathParam("id")int id){
+    public Response deactivatePolicyById(@PathParam("id") int id) {
 
         SimpleResponse sr = policyFrameworkService.deactivatePolicyById(id);
 
         return ok(sr.toJSON()).
-                status(sr.getCode()).
-                build();
+                                  status(sr.getCode()).
+                                  build();
     }
 
     @DELETE
     @Path("policies/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteById(@PathParam("id")int id){
+    public Response deleteById(@PathParam("id") int id) {
 
         SimpleResponse sr = policyFrameworkService.deletePolicyById(id);
 
         return ok(sr.toJSON()).
-                status(sr.getCode()).
-                build();
+                                  status(sr.getCode()).
+                                  build();
     }
 
     @DELETE
     @Path("policies")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteAll(){
+    public Response deleteAll() {
 
         policyFrameworkService.deleteAllPolicyRules();
 
         SimpleResponse sr = new SimpleResponse("All policies deleted", true);
 
         return ok(sr.toJSON()).
-                status(sr.getCode()).
-                build();
+                                  status(sr.getCode()).
+                                  build();
     }
 
     @PUT
     @Path("policies/{id}/priority/{newPriority}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response changePriority(@PathParam("id")int id, 
-        @PathParam("newPriority")int newPriority){
+    public Response changePriority(@PathParam("id") int id,
+                                   @PathParam("newPriority") int newPriority) {
 
         SimpleResponse sr = policyFrameworkService.changePolicyPriority(id, newPriority);
 
         return ok(sr.toJSON()).
-                status(sr.getCode()).
-                build();
+                                  status(sr.getCode()).
+                                  build();
     }
 
     @PUT
     @Path("policytype/register/{policyType}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response registerPolicyType(@PathParam("policyType")String policyType){
+    public Response registerPolicyType(@PathParam("policyType") String policyType) {
 
         SimpleResponse sr = policyFrameworkService.addPolicyType(policyType.toUpperCase());
 
         return ok(sr.getMessage()).
-                status(sr.getCode()).
-                build();
+                                      status(sr.getCode()).
+                                      build();
     }
+
     @DELETE
     @Path("policytype/deregister/{policyType}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deregisterPolicyType(@PathParam("policyType")String policyType){
-        log.info("Received request to de-register "+policyType);
+    public Response deregisterPolicyType(@PathParam("policyType") String policyType) {
+        log.info("Received request to de-register " + policyType);
         log.info("Collecting soon to be orphan policy instances");
         PolicyRules policyRules = policyFrameworkService.getPoliciesByType(policyType.toUpperCase());
         SimpleResponse sr = policyFrameworkService.removePolicyType(policyType.toUpperCase());
-        for(PolicyRule pr : policyFrameworkService.getPoliciesByType(policyType.toUpperCase()).getPolicyRules()){
+        for (PolicyRule pr : policyFrameworkService.getPoliciesByType(policyType.toUpperCase()).getPolicyRules()) {
             policyFrameworkService.deletePolicyById(pr.getId());
         }
         log.info("Policy type de-registered");
         log.info("Sending orphan policy rules to Policy Manager");
         return ok(sr.getMessage()).
-                entity(policyRules.toJSONString()).
-                status(sr.getCode()).
-                build();
+                                      entity(policyRules.toJSONString()).
+                                      status(sr.getCode()).
+                                      build();
     }
 }

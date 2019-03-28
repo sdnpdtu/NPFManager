@@ -16,9 +16,9 @@
 
 package eu.ngpaas.pmrest.rest;
 
-import org.onlab.rest.AbstractWebApplication;
-
 import java.util.Set;
+
+import org.onlab.rest.AbstractWebApplication;
 
 public class AppWebApplication extends AbstractWebApplication {
     @Override

@@ -1,4 +1,6 @@
-package eu.ngpaas.pmLib;
+package eu.ngpaas.pmlib;
+
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -6,8 +8,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Represents a list of PolicyRule objects
@@ -30,6 +30,7 @@ public class PolicyRules {
 
     /**
      * Returns the list of policy rules
+     *
      * @return list of policy rules
      */
     public CopyOnWriteArrayList<PolicyRule> getPolicyRules() {
@@ -38,6 +39,7 @@ public class PolicyRules {
 
     /**
      * Sets the list of policy rules
+     *
      * @param policyRules list of policy rules
      */
     public void setPolicyRules(CopyOnWriteArrayList<PolicyRule> policyRules) {
@@ -46,6 +48,7 @@ public class PolicyRules {
 
     /**
      * Adds a PolicyRule to the list of policy rules
+     *
      * @param pr a policy rule
      */
     public void addRule(PolicyRule pr) {
@@ -56,8 +59,9 @@ public class PolicyRules {
 
     /**
      * Deletes a PolicyRule from the list of policy rules
+     *
      * @param prToDelete a policy rule
-     * @return true 
+     * @return true
      */
     public Boolean deleteRule(PolicyRule prToDelete) {
         this.policyRules.remove(prToDelete);
@@ -67,6 +71,7 @@ public class PolicyRules {
 
     /**
      * Parses a PolicyRules object to JSON
+     *
      * @return a JSON string
      */
     public String toJSONString() {

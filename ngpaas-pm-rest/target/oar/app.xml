@@ -18,7 +18,7 @@
      category="Utility" url="http://ngpaas.eu" title="Policy Manager"
      featuresRepo="mvn:eu.ngpaas/ngpaas-pm-rest/1.0-SNAPSHOT/xml/features"
      features="ngpaas-pm-rest">
-    <description>ONOS OSGi bundle archetype.</description>
-    <artifact>mvn:eu.ngpaas/ngpaas-pm-rest/1.0-SNAPSHOT</artifact>
-    <artifact>mvn:eu.ngpaas/ngpaas-pm-api/1.0-SNAPSHOT</artifact>
+  <description>ONOS OSGi bundle archetype.</description>
+  <artifact>mvn:eu.ngpaas/ngpaas-pm-rest/1.0-SNAPSHOT</artifact>
+  <artifact>mvn:eu.ngpaas/ngpaas-pm-api/1.0-SNAPSHOT</artifact>
 </app>

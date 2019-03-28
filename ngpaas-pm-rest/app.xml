@@ -18,7 +18,7 @@
      category="Utility" url="http://ngpaas.eu" title="Policy Manager"
      featuresRepo="mvn:${project.groupId}/${project.artifactId}/${project.version}/xml/features"
      features="${project.artifactId}">
-    <description>${project.description}</description>
-    <artifact>mvn:${project.groupId}/${project.artifactId}/${project.version}</artifact>
-    <artifact>mvn:${project.groupId}/ngpaas-pm-api/${project.version}</artifact>
+  <description>${project.description}</description>
+  <artifact>mvn:${project.groupId}/${project.artifactId}/${project.version}</artifact>
+  <artifact>mvn:${project.groupId}/ngpaas-pm-api/${project.version}</artifact>
 </app>

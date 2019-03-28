@@ -15,10 +15,10 @@
   ~ limitations under the License.
   -->
 <features xmlns="http://karaf.apache.org/xmlns/features/v1.2.0" name="ngpaas-pm-rest-1.0-SNAPSHOT">
-    <feature name="ngpaas-pm-rest" version="1.0-SNAPSHOT"
-             description="ONOS OSGi bundle archetype.">
-       <feature>onos-api</feature>
-        <bundle>mvn:eu.ngpaas/ngpaas-pm-api/1.0-SNAPSHOT</bundle>
-        <bundle>mvn:eu.ngpaas/ngpaas-pm-rest/1.0-SNAPSHOT</bundle>
-    </feature>
+  <feature name="ngpaas-pm-rest" version="1.0-SNAPSHOT"
+           description="ONOS OSGi bundle archetype.">
+    <feature>onos-api</feature>
+    <bundle>mvn:eu.ngpaas/ngpaas-pm-api/1.0-SNAPSHOT</bundle>
+    <bundle>mvn:eu.ngpaas/ngpaas-pm-rest/1.0-SNAPSHOT</bundle>
+  </feature>
 </features>

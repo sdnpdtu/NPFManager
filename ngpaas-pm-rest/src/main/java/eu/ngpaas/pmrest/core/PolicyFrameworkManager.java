@@ -1,12 +1,38 @@
 package eu.ngpaas.pmrest.core;
 
-import eu.ngpaas.pmLib.*;
+import static org.slf4j.LoggerFactory.getLogger;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriBuilder;
+
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.ngpaas.pmlib.ConflictValidator;
+import eu.ngpaas.pmlib.ForwardingObjectiveList;
+import eu.ngpaas.pmlib.PolicyAction;
+import eu.ngpaas.pmlib.PolicyCollector;
+import eu.ngpaas.pmlib.PolicyCondition;
+import eu.ngpaas.pmlib.PolicyRule;
+import eu.ngpaas.pmlib.PolicyRules;
+import eu.ngpaas.pmlib.PolicyState;
+import eu.ngpaas.pmlib.SimpleResponse;
 import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Service;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.onlab.osgi.DefaultServiceDirectory;
@@ -17,46 +43,25 @@ import org.onosproject.net.flow.FlowEntry;
 import org.onosproject.net.flow.FlowRuleService;
 import org.onosproject.net.flowobjective.ForwardingObjective;
 import org.slf4j.Logger;
-import sun.java2d.pipe.SpanShapeRenderer;
-
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriBuilder;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Implements a manager of policies
  */
-@Component(immediate = true)
-@Service
 public class PolicyFrameworkManager implements PolicyFrameworkService {
-    
+
+    private final Logger log = getLogger(getClass());
     /**
      * Contains all the policies of the framework
      */
     private PolicyRules policies = null;
-
     /**
      * Contains the list of the supported policy types
      */
     private List<String> policyTypes = new ArrayList<>();
-
-    private final Logger log = getLogger(getClass());
     private AtomicInteger uniqueId = new AtomicInteger();
     private WebTarget RESTtarget = ClientBuilder.newClient(new ClientConfig())
-            .register(HttpAuthenticationFeature.basic("onos", "rocks"))
-            .target(UriBuilder.fromUri("http://localhost:8181/onos").build());
+                                                .register(HttpAuthenticationFeature.basic("onos", "rocks"))
+                                                .target(UriBuilder.fromUri("http://localhost:8181/onos").build());
     private ReentrantLock lock = new ReentrantLock();
 
     @Activate
@@ -71,7 +76,7 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
     }
 
     @Override
-    public PolicyRules getAllPolicies(){
+    public PolicyRules getAllPolicies() {
         return this.policies;
     }
 
@@ -79,29 +84,32 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
     public PolicyRules getActivePolicies() {
         PolicyRules apr = new PolicyRules();
         apr.setPolicyRules(this.policies.getPolicyRules()
-                .stream()
-                .filter(policy -> policy.getState().equals(PolicyState.ENFORCED))
-                .collect(new PolicyCollector()));
+                                        .stream()
+                                        .filter(policy -> policy.getState().equals(PolicyState.ENFORCED))
+                                        .collect(new PolicyCollector()));
         return apr;
     }
 
     @Override
     public PolicyRule getPolicyById(int id) {
         CopyOnWriteArrayList<PolicyRule> filteredPolicies = this.policies.getPolicyRules()
-                .stream()
-                .filter( policy -> policy.getId() == id )
-                .collect(new PolicyCollector());
-        if (filteredPolicies.isEmpty()) return null;
-        else return  filteredPolicies.get(0);
+                                                                         .stream()
+                                                                         .filter(policy -> policy.getId() == id)
+                                                                         .collect(new PolicyCollector());
+        if (filteredPolicies.isEmpty()) {
+            return null;
+        } else {
+            return filteredPolicies.get(0);
+        }
     }
 
     @Override
     public PolicyRules getPoliciesByState(PolicyState policyState) {
         PolicyRules apr = new PolicyRules();
         apr.setPolicyRules(this.policies.getPolicyRules()
-                .stream()
-                .filter( policy -> policy.getState().equals(policyState) )
-                .collect(new PolicyCollector()));
+                                        .stream()
+                                        .filter(policy -> policy.getState().equals(policyState))
+                                        .collect(new PolicyCollector()));
         return apr;
     }
 
@@ -109,15 +117,15 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
     public PolicyRules getPoliciesByType(String policyType) {
         PolicyRules apr = new PolicyRules();
         apr.setPolicyRules(this.policies.getPolicyRules()
-                .stream()
-                .filter( policy -> policy.getType().equals(policyType) )
-                .collect(new PolicyCollector()));
+                                        .stream()
+                                        .filter(policy -> policy.getType().equals(policyType))
+                                        .collect(new PolicyCollector()));
         return apr;
     }
 
     @Override
-    public int getNumberOfPolicies() { 
-        return this.policies.getPolicyRules().size(); 
+    public int getNumberOfPolicies() {
+        return this.policies.getPolicyRules().size();
     }
 
     @Override
@@ -128,8 +136,10 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
         PolicyRule p = getPolicyById(id, getPoliciesByState(PolicyState.PENDING));
         List messages = new ArrayList();
 
-        if (p == null) return new SimpleResponse(
-                "Policy ["+String.valueOf(id)+"] not in Pending state.", false);
+        if (p == null) {
+            return new SimpleResponse(
+                "Policy [" + String.valueOf(id) + "] not in Pending state.", false);
+        }
 
         // Untag the policy so it can be enforced as soon as possible
         p.setDeactivated(false);
@@ -137,9 +147,9 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
         // Apply the context validation. If fails, returns an error message
         if (!contextValidation(p).isSuccess()) {
             return new SimpleResponse(
-                    "Policy [" + String.valueOf(p.getId()) + "] failed at context validation.", false);
+                "Policy [" + String.valueOf(p.getId()) + "] failed at context validation.", false);
         }
-        try{
+        try {
             lock.lock();
             /* Apply the conflict validation to the policy we try to activate. 
             If fails, returns an error messsage */
@@ -148,7 +158,7 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
             if (!sr.isSuccess()) {
                 messages.add("Policy [" + String.valueOf(p.getId()) + "] failed at conflict validation.");
                 return new SimpleResponse(
-                        messages, false);
+                    messages, false);
             }
         } finally {
             lock.unlock();
@@ -159,21 +169,23 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
         enforcePolicy(p);
         messages.add("Policy [" + String.valueOf(p.getId()) + "] activated.");
         return new SimpleResponse(
-                messages, true);
+            messages, true);
     }
 
     @Override
     public SimpleResponse deactivatePolicyById(int id) {
 
         PolicyRule pr;
-        try{
+        try {
             lock.lock();
             /* Looks for a policy with the given id in enforced state. 
             If it is not found, returns an error message */
             pr = getPolicyById(id, getActivePolicies());
 
-            if (pr == null) return new SimpleResponse(
-                    "Policy ["+String.valueOf(id)+"] not in Enforced state", false);
+            if (pr == null) {
+                return new SimpleResponse(
+                    "Policy [" + String.valueOf(id) + "] not in Enforced state", false);
+            }
 
             // Move the policy to the pending state
             pr.setState(PolicyState.PENDING);
@@ -187,7 +199,7 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
         removePolicy(pr);
 
         CopyOnWriteArrayList<String> messages = new CopyOnWriteArrayList<>();
-        messages.add("Policy ["+String.valueOf(id)+"] deactivated.");
+        messages.add("Policy [" + String.valueOf(id) + "] deactivated.");
 
         // Try to activate PENDING policies by priority order
         messages.add(activatePendingPolicies().getMessage());
@@ -200,15 +212,17 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
 
         // Looks for a policy with the given id. If it is not found, returns an error message
         PolicyRule pr;
-        try{
+        try {
             lock.lock();
             pr = getPolicyById(id);
 
-            if (pr == null) return new SimpleResponse(
-                    "Policy ["+String.valueOf(id)+"] not found.", false);
+            if (pr == null) {
+                return new SimpleResponse(
+                    "Policy [" + String.valueOf(id) + "] not found.", false);
+            }
             // Remove the policy from the framework
             policies.getPolicyRules().remove(pr);
-        }finally {
+        } finally {
             lock.unlock();
         }
 
@@ -216,10 +230,12 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
         removePolicy(pr);
 
         // If we have just deleted the last policy, reset the id
-        if (policies.getPolicyRules().size() == 0) resetUniqueId();
+        if (policies.getPolicyRules().size() == 0) {
+            resetUniqueId();
+        }
 
         CopyOnWriteArrayList<String> messages = new CopyOnWriteArrayList<>();
-        messages.add("Policy ["+String.valueOf(id)+"] deleted.");
+        messages.add("Policy [" + String.valueOf(id) + "] deleted.");
 
         // Try to activate PENDING policies by priority order
         messages.add(activatePendingPolicies().getMessage());
@@ -230,17 +246,17 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
     @Override
     public void deleteAllPolicyRules() {
 
-        try{
+        try {
             lock.lock();
             // Iterate over the ENFORCED policies
-            for(PolicyRule pr : getActivePolicies().getPolicyRules()) {
+            for (PolicyRule pr : getActivePolicies().getPolicyRules()) {
                 // Remove all the policies from the network
                 removePolicy(pr);
             }
             // Remove all policy rules from the policy framework
             this.policies.setPolicyRules(new CopyOnWriteArrayList<>());
             resetUniqueId();
-        }finally {
+        } finally {
             lock.unlock();
         }
     }
@@ -259,9 +275,9 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
         int num_success = 0;
         int num_error = 0;
 
-        int[] sortedIndices = IntStream.range(0,policies.getPolicyRules().size())
-                .boxed().sorted(Comparator.comparing(policyRules::get))
-                .mapToInt(ele->ele).toArray();
+        int[] sortedIndices = IntStream.range(0, policies.getPolicyRules().size())
+                                       .boxed().sorted(Comparator.comparing(policyRules::get))
+                                       .mapToInt(ele -> ele).toArray();
         // Iterate over all the received policies
         for (int pos : sortedIndices) {
             PolicyRule pr = policyRules.get(pos);
@@ -304,13 +320,13 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
 
             }
             ids.add(pr.getId());
-            messages =restResponse.getMessages();
-            for (String message:messages){
-                log.info("Debug: "+message);
+            messages = restResponse.getMessages();
+            for (String message : messages) {
+                log.info("Debug: " + message);
             }
         }
         // If there is any error (create Status code 400 response)
-        if (num_error > 0 ) {
+        if (num_error > 0) {
             sr = new SimpleResponse(messages, false, ids);
             // If there is no error and at least one success (create Status code 200 response)
         } else if (num_success > 0) {
@@ -334,19 +350,21 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
             SimpleResponse sr = activatePendingPolicies();
 
             List messages = new ArrayList();
-            if (!sr.isSuccess())
+            if (!sr.isSuccess()) {
                 messages.add(sr.getMessage());
-            if (getPolicyById(id,getPoliciesByState(PolicyState.ENFORCED)) != null) {
-                messages.add("Priority successfully changed. Policy ["+String.valueOf(id)+"] enforced with priority " + 
-                    newPriority + ".");
+            }
+            if (getPolicyById(id, getPoliciesByState(PolicyState.ENFORCED)) != null) {
+                messages
+                    .add("Priority successfully changed. Policy [" + String.valueOf(id) + "] enforced with priority " +
+                         newPriority + ".");
                 return new SimpleResponse(messages, true);
-            }else {
-                messages.add("Priority successfully changed. Policy ["+
-                    String.valueOf(id)+"] moved to pending state with priority " + newPriority + ".");
-                return new SimpleResponse( messages, true);
+            } else {
+                messages.add("Priority successfully changed. Policy [" +
+                             String.valueOf(id) + "] moved to pending state with priority " + newPriority + ".");
+                return new SimpleResponse(messages, true);
             }
         } else {
-            return new SimpleResponse("Policy ["+String.valueOf(id)+"] not found.", false);
+            return new SimpleResponse("Policy [" + String.valueOf(id) + "] not found.", false);
         }
     }
 
@@ -377,16 +395,20 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
 
     @Override
     public SimpleResponse addPolicyType(String policyType) {
-        if (!this.policyTypes.contains(policyType)) this.policyTypes.add(policyType);
-        return new SimpleResponse("Policy type " + policyType + 
-            " successfully added", true);
+        if (!this.policyTypes.contains(policyType)) {
+            this.policyTypes.add(policyType);
+        }
+        return new SimpleResponse("Policy type " + policyType +
+                                  " successfully added", true);
     }
 
     @Override
     public SimpleResponse removePolicyType(String policyType) {
-        if (this.policyTypes.contains(policyType)) policyTypes.remove(policyType);
-        return new SimpleResponse("Policy type " + policyType + 
-            " successfully removed", true);
+        if (this.policyTypes.contains(policyType)) {
+            policyTypes.remove(policyType);
+        }
+        return new SimpleResponse("Policy type " + policyType +
+                                  " successfully removed", true);
     }
 
     @Override
@@ -396,22 +418,26 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
 
     /**
      * Returns if a policy that we are trying to push is identical to any policy in pending state
+     *
      * @param pr The policy rule to check its state
      */
     private boolean isPendingPolicy(PolicyRule pr) {
-        for (PolicyRule pol: getPoliciesByState(PolicyState.PENDING).getPolicyRules()) {
-            if (pol.equals(pr)) return true;
+        for (PolicyRule pol : getPoliciesByState(PolicyState.PENDING).getPolicyRules()) {
+            if (pol.equals(pr)) {
+                return true;
+            }
         }
         return false;
     }
 
     /**
      * Validates a policy rule
-     * @param newPolicyRule The policy to validate
+     *
+     * @param newPolicyRule  The policy to validate
      * @param activePolicies The list of active polices
      */
-    private SimpleResponse validatePolicyRule(PolicyRule newPolicyRule, 
-        PolicyRules activePolicies) {
+    private SimpleResponse validatePolicyRule(PolicyRule newPolicyRule,
+                                              PolicyRules activePolicies) {
 
         SimpleResponse restResponse;
         List<String> messages = new CopyOnWriteArrayList<>();
@@ -433,8 +459,8 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
         error message with the code 2 */
         if (!restResponse.isSuccess()) {
             newPolicyRule.setState(PolicyState.PENDING);
-			    restResponse = new SimpleResponse(2, "Policy failed at context validation.", false);
-		    return restResponse;
+            restResponse = new SimpleResponse(2, "Policy failed at context validation.", false);
+            return restResponse;
         }
         // If succeeds, changes the state to context validated
         newPolicyRule.setState(PolicyState.CONTEXT_VALIDATED);
@@ -446,12 +472,12 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
         // If it fails
         if (!restResponse.isSuccess()) {
             // If has a code 2 it is a duplicated policy
-            if (restResponse.getCode() == 2) { 
+            if (restResponse.getCode() == 2) {
                 restResponse = new SimpleResponse(0, restResponse.getMessage(), false);
             }
             /* Otherwise, it is moved to the pending state and returns an error
             message with the code 1 */
-            else{
+            else {
                 newPolicyRule.setState(PolicyState.PENDING);
                 restResponse = new SimpleResponse(1, "Policy failed at conflict validation.", false);
             }
@@ -459,27 +485,29 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
         }
         // If succeeds means that the policy has been enforced
         messages = restResponse.getMessages();
-        messages.add(0,"Policy activated.");
+        messages.add(0, "Policy activated.");
         restResponse = new SimpleResponse(3, messages, true);
         return restResponse;
     }
 
     /**
      * Formally validates a policy.
+     *
      * @param pr The policy rule to validate
      */
     private SimpleResponse formalValidation(PolicyRule pr) {
         // Checks that the policy type is registered
-        if (!policyTypes.contains(pr.getType())) 
-            return new SimpleResponse("Policy type " + pr.getType() + 
-                " not registered.", false);
-        
+        if (!policyTypes.contains(pr.getType())) {
+            return new SimpleResponse("Policy type " + pr.getType() +
+                                      " not registered.", false);
+        }
+
         // Connects with the formal validation endpoint of the policy type
-        Response response = 
-            RESTtarget.path(pr.getType().toLowerCase()+"policy/formalvalidation")
+        Response response =
+            RESTtarget.path(pr.getType().toLowerCase() + "policy/formalvalidation")
                       .request()
                       .post(Entity.json(new ByteArrayInputStream(pr.toJSONString().getBytes())));
-        
+
         // Returns the reply from the endpoint
         SimpleResponse restResponse;
         if (response.getStatus() == Status.OK.getStatusCode()) {
@@ -488,34 +516,37 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
             restResponse = new SimpleResponse(response.readEntity(String.class), false);
         }
         response.close();
-        if (restResponse.isSuccess()) return selfConflictCheck(pr);
+        if (restResponse.isSuccess()) {
+            return selfConflictCheck(pr);
+        }
         return restResponse;
     }
 
     /**
      * Check if a policy is conflicting with itself.
+     *
      * @param pr The policy rule
      */
     private SimpleResponse selfConflictCheck(PolicyRule pr) {
         SimpleResponse restResponse = new SimpleResponse("Formally validated.", true);
 
-        for (CopyOnWriteArrayList<PolicyCondition> clause: pr.getPolicyConditions()) {
-            for (int j = 0; j < clause.size()-1; j++) {
-                for (int k = j+1; k < clause.size(); k++) {
+        for (CopyOnWriteArrayList<PolicyCondition> clause : pr.getPolicyConditions()) {
+            for (int j = 0; j < clause.size() - 1; j++) {
+                for (int k = j + 1; k < clause.size(); k++) {
                     if (clause.get(j).getPolicyVariable().equalsIgnoreCase(clause.get(k).getPolicyVariable())) {
                         if (clause.get(j).getPolicyValue().equalsIgnoreCase(clause.get(k).getPolicyValue())) {
                             clause.remove(k);
                         } else {
-                            return new SimpleResponse("Formal error: This policy has self-conflicting conditions.", 
-                                false);
+                            return new SimpleResponse("Formal error: This policy has self-conflicting conditions.",
+                                                      false);
                         }
                     }
                 }
             }
         }
         CopyOnWriteArrayList<PolicyAction> pas = pr.getPolicyActions();
-        for (int i = 0; i < pas.size()-1;i++) {
-            for (int j = i+1; j< pas.size(); j++) {
+        for (int i = 0; i < pas.size() - 1; i++) {
+            for (int j = i + 1; j < pas.size(); j++) {
                 if (pas.get(i).getPolicyVariable().equalsIgnoreCase(pas.get(j).getPolicyVariable())) {
                     if (pas.get(i).getPolicyValue().equalsIgnoreCase(pas.get(j).getPolicyValue())) {
                         pas.remove(j);
@@ -529,16 +560,18 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
         // Policy does not have conflicting conditions
         return restResponse;
     }
+
     /**
      * Context validates a policy.
+     *
      * @param pr The policy rule to validate.
      */
     private SimpleResponse contextValidation(PolicyRule pr) {
         // Connects with the context validation enpoint of the policy type
-        Response response = RESTtarget.path(pr.getType().toLowerCase()+"policy/contextvalidation")
-                .request()
-                .post(Entity.json(new ByteArrayInputStream(pr.toJSONString().getBytes())));
-        
+        Response response = RESTtarget.path(pr.getType().toLowerCase() + "policy/contextvalidation")
+                                      .request()
+                                      .post(Entity.json(new ByteArrayInputStream(pr.toJSONString().getBytes())));
+
         // Returns the reply of the endpoint
         SimpleResponse restResponse;
         if (response.getStatus() == Status.OK.getStatusCode()) {
@@ -552,6 +585,7 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
 
     /**
      * Adds  the passed policy to the list of policies
+     *
      * @param newPolicy PolicyRule to add
      */
     private void addPolicy(PolicyRule newPolicy) {
@@ -568,27 +602,34 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
     /**
      * Resets the id to 0
      */
-    private void resetUniqueId() { this.uniqueId.set(0);}
+    private void resetUniqueId() {
+        this.uniqueId.set(0);
+    }
 
     /**
      * Returns the policy with the given id.
-     * @param id Policy identifier
+     *
+     * @param id       Policy identifier
      * @param policies PolicyRules object with the list of policy rules, where the
-     *        the PolicyRule with the given id should be found
+     *                 the PolicyRule with the given id should be found
      * @return PolicyRule with given id, or null.
      */
-    private PolicyRule getPolicyById(int id, PolicyRules policies){
+    private PolicyRule getPolicyById(int id, PolicyRules policies) {
 
         CopyOnWriteArrayList<PolicyRule> filteredPolicies = policies.getPolicyRules()
-                .stream()
-                .filter( policy -> policy.getId() == id )
-                .collect(new PolicyCollector());
-        if (filteredPolicies.isEmpty()) return null;
-        else return  filteredPolicies.get(0);
+                                                                    .stream()
+                                                                    .filter(policy -> policy.getId() == id)
+                                                                    .collect(new PolicyCollector());
+        if (filteredPolicies.isEmpty()) {
+            return null;
+        } else {
+            return filteredPolicies.get(0);
+        }
     }
 
     /**
      * Tries to activate the policies in Pending state.
+     *
      * @return A SimpleResponse object with a success/failure message
      */
     private SimpleResponse activatePendingPolicies() {
@@ -600,9 +641,11 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
             return new SimpleResponse("No pending policies to activate", false);
         } else {
             ArrayList<Integer> enforced_ids = new ArrayList<>();
-            for( PolicyRule pr : prs.getPolicyRules()) {
+            for (PolicyRule pr : prs.getPolicyRules()) {
                 // If the policy is tagged, it has to be kept as PENDING
-                if (pr.isDeactivated()) continue;
+                if (pr.isDeactivated()) {
+                    continue;
+                }
                 if (contextValidation(pr).isSuccess()) {
                     try {
                         lock.lock();
@@ -617,20 +660,21 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
                     }
                 }
             }
-            if (enforced_ids.isEmpty()){
+            if (enforced_ids.isEmpty()) {
                 return new SimpleResponse("No pending policy could be activated.", false);
             } else {
                 String idsString = enforced_ids.stream().map(Object::toString)
-                        .collect(Collectors.joining(", "));
+                                               .collect(Collectors.joining(", "));
                 return new SimpleResponse("Policies [" + idsString + "] activated.", true);
             }
         }
     }
 
     /**
-     * Checks if the given PolicyRule is in conflict with the policy rules 
+     * Checks if the given PolicyRule is in conflict with the policy rules
      * contained in the passed PolicyRules.
-     * @param npRule the policy rule
+     *
+     * @param npRule    the policy rule
      * @param activeprs the list of policy rules to check the conflict with.
      */
     private SimpleResponse conflictValidator(PolicyRule npRule, PolicyRules activeprs) {
@@ -639,33 +683,34 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
         CopyOnWriteArrayList<String> messages = new CopyOnWriteArrayList<>();
 
         //if we have no rules then just return that conflict validation is OK
-        if (activeprs.getPolicyRules().isEmpty()) return sr;
+        if (activeprs.getPolicyRules().isEmpty()) {
+            return sr;
+        }
         /* Same policy type conflict validation
         apRule = active policy rule
         First step is conflict identification.
         Creates a list in which to host possible conflicting rules (crl).*/
         ArrayList<PolicyRule> crl = new ArrayList();
-        for (PolicyRule apRule : activeprs.getPolicyRules()){ //only ACTIVATED policies
+        for (PolicyRule apRule : activeprs.getPolicyRules()) { //only ACTIVATED policies
             // Add the rule to crl
             SimpleResponse sr_conflict = ConflictValidator.checkConflict(npRule, apRule);
-            if (!sr_conflict.isSuccess()){
+            if (!sr_conflict.isSuccess()) {
                 crl.add(apRule);
             }
         }
         /* Here crl should contain all conflicting rules. 
         Now we need to she which to keep, the new rule or the old rule set.*/
-        SimpleResponse sr_resolution_result = ConflictValidator.conflictResolution(npRule,crl);
-        if (sr_resolution_result.isSuccess()){
+        SimpleResponse sr_resolution_result = ConflictValidator.conflictResolution(npRule, crl);
+        if (sr_resolution_result.isSuccess()) {
             // Just return false and the policy will move to Pending state
-		    sr = new SimpleResponse("Policy failed at conflict validation", false);
-        }
-        else{
+            sr = new SimpleResponse("Policy failed at conflict validation", false);
+        } else {
             /* New rule should be installed
             First deactivate old policies */
-            for (PolicyRule ruleToDeactivate:crl){
+            for (PolicyRule ruleToDeactivate : crl) {
                 deactivatePolicyById(ruleToDeactivate.getId());
                 ruleToDeactivate.setDeactivated(false);
-                messages.add("Policy ["+ruleToDeactivate.getId()+"] moved to pending state");
+                messages.add("Policy [" + ruleToDeactivate.getId() + "] moved to pending state");
             }
             // Return true so that the policy will be activated
             messages.add("Policy passed conflict validation");
@@ -677,66 +722,69 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
     /**
      * Initial implementation of the conflict validation using the flow rules.
      */
-    private SimpleResponse newConflictValidator(PolicyRule npRule){
+    private SimpleResponse newConflictValidator(PolicyRule npRule) {
         SimpleResponse sr = new SimpleResponse("Conflict validated", true);
         ObjectMapper mapper = new ObjectMapper();
-        Response response = RESTtarget.path(npRule.getType().toLowerCase()+"policy/rules")
-                .request().post(Entity.json(new ByteArrayInputStream(npRule.toJSONString().getBytes())));
+        Response response = RESTtarget.path(npRule.getType().toLowerCase() + "policy/rules")
+                                      .request()
+                                      .post(Entity.json(new ByteArrayInputStream(npRule.toJSONString().getBytes())));
         FlowRuleService flowRuleService = DefaultServiceDirectory.getService(FlowRuleService.class);
         DeviceService deviceService = DefaultServiceDirectory.getService(DeviceService.class);
-        if (response.getStatus() != Status.OK.getStatusCode())
+        if (response.getStatus() != Status.OK.getStatusCode()) {
             sr = new SimpleResponse("Endpoint for conflict validation missing", false);
-        else {
+        } else {
             try {
-                ForwardingObjectiveList forwardingObjectiveList = 
+                ForwardingObjectiveList forwardingObjectiveList =
                     mapper.readValue(response.getEntity().toString(), ForwardingObjectiveList.class);
-                for (int i = 0; i < forwardingObjectiveList.getList().size(); i++){
+                for (int i = 0; i < forwardingObjectiveList.getList().size(); i++) {
                     ForwardingObjective newEntry = forwardingObjectiveList.getList().get(i);
                     List<DeviceId> targetDevices = forwardingObjectiveList.getDevices().get(i);
 
-                    for (Device d:deviceService.getDevices()){
-                        for (FlowEntry enforcedEntry : flowRuleService.getFlowEntries(d.id())){
+                    for (Device d : deviceService.getDevices()) {
+                        for (FlowEntry enforcedEntry : flowRuleService.getFlowEntries(d.id())) {
                             sr = ConflictValidator.newCheckConflict(enforcedEntry, newEntry, targetDevices);
-                            if (!sr.isSuccess()){
+                            if (!sr.isSuccess()) {
                                 return sr;
                             }
                         }
                     }
                 }
                 forwardingObjectiveList.getDevices();
-            }catch (IOException e){
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
         return sr;
     }
-    
+
     /**
-     * Enforces a policy rule in the underlying network by calling the 
+     * Enforces a policy rule in the underlying network by calling the
      * corresponding endpoint of the policy type app.
+     *
      * @param pr The policy rule to enforce
      */
-    private void enforcePolicy(PolicyRule pr){
+    private void enforcePolicy(PolicyRule pr) {
 
-        Response response = RESTtarget.path(pr.getType().toLowerCase()+"policy/enforce").request()
-                .post(Entity.json(new ByteArrayInputStream(pr.toJSONString().getBytes())));
+        Response response = RESTtarget.path(pr.getType().toLowerCase() + "policy/enforce").request()
+                                      .post(Entity.json(new ByteArrayInputStream(pr.toJSONString().getBytes())));
         pr.setState(PolicyState.ENFORCED);
-        if (response.getStatus() == Status.OK.getStatusCode()){
+        if (response.getStatus() == Status.OK.getStatusCode()) {
             log.info("Policy successfuly enforced");
         }
         response.close();
     }
 
     /**
-     * Removes a policy rule from the underlying network by calling the 
+     * Removes a policy rule from the underlying network by calling the
      * corresponding endpoint of the policy type app.
+     *
      * @param pr The policy rule to remove
      */
-    private void removePolicy(PolicyRule pr){
-        Response response = RESTtarget.path(pr.getType().toLowerCase()+"policy/remove").request()
-                .post(Entity.json(new ByteArrayInputStream(pr.toJSONString().getBytes())));
+    private void removePolicy(PolicyRule pr) {
+        Response response = RESTtarget.path(pr.getType().toLowerCase() + "policy/remove").request()
+                                      .post(Entity.json(new ByteArrayInputStream(pr.toJSONString().getBytes())));
 
-        if (response.getStatus() == Status.OK.getStatusCode()){
+        if (response.getStatus() == Status.OK.getStatusCode()) {
             log.info("Policy successfuly removed");
         }
         response.close();

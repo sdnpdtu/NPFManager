@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
 
-    <groupId>eu.ngpaas</groupId>
-    <artifactId>ngpaas-policymanager</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <packaging>pom</packaging>
+  <groupId>eu.ngpaas</groupId>
+  <artifactId>ngpaas-policymanager</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
 
-    <properties>
-        <onos.version>1.13.6</onos.version>
-    </properties>
-    <modules>
-        <module>ngpaas-pm-api</module>
-        <module>ngpaas-pm-rest</module>
-    </modules>
+  <properties>
+    <onos.version>1.15.0</onos.version>
+  </properties>
+  <modules>
+    <module>ngpaas-pm-api</module>
+    <module>ngpaas-pm-rest</module>
+  </modules>
 
 </project>

@@ -1,22 +1,21 @@
 package eu.ngpaas.pmrest.core;
 
-import eu.ngpaas.pmLib.PolicyRule;
-import eu.ngpaas.pmLib.PolicyRules;
-import eu.ngpaas.pmLib.PolicyState;
-import eu.ngpaas.pmLib.SimpleResponse;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Service;
 import java.util.List;
+
+import eu.ngpaas.pmlib.PolicyRule;
+import eu.ngpaas.pmlib.PolicyRules;
+import eu.ngpaas.pmlib.PolicyState;
+import eu.ngpaas.pmlib.SimpleResponse;
 
 /**
  * Represents the requirements of a Policy Framework to manage policies
  */
-@Component(immediate = true)
-@Service
+
 public interface PolicyFrameworkService {
 
     /**
      * Deserializes a policy rule.
+     *
      * @param json the policy rule in JSON format
      * @return a PolicyRules object
      */
@@ -24,18 +23,21 @@ public interface PolicyFrameworkService {
 
     /**
      * Returns the list of policies.
+     *
      * @return all policies
      */
     PolicyRules getAllPolicies();
-    
+
     /**
      * Returns the list of active policies
+     *
      * @return active policies
      */
     PolicyRules getActivePolicies();
-    
+
     /**
      * Returns the policy with the given id.
+     *
      * @param id the policy identifier
      * @return a policy rule
      */
@@ -43,6 +45,7 @@ public interface PolicyFrameworkService {
 
     /**
      * Returns the policies in the given PolicyState.
+     *
      * @param policyState the policy state
      * @return policies in given state
      */
@@ -50,6 +53,7 @@ public interface PolicyFrameworkService {
 
     /**
      * Returns the policies of the given policy type.
+     *
      * @param policyType the type of policy
      * @return policies of given type
      */
@@ -57,12 +61,14 @@ public interface PolicyFrameworkService {
 
     /**
      * Returns the number of policies
+     *
      * @return the number of policies
      */
     int getNumberOfPolicies();
 
     /**
      * Activates the policy with the given id.
+     *
      * @param id the policy identifier
      * @return a SimpleResponse object containing a success/fail message.
      */
@@ -70,6 +76,7 @@ public interface PolicyFrameworkService {
 
     /**
      * Deactivates the policy with the given id.
+     *
      * @param id the policy identifier
      * @return a SimpleResponse oject containing a success/fail message.
      */
@@ -77,6 +84,7 @@ public interface PolicyFrameworkService {
 
     /**
      * Deletes the policy with the given id.
+     *
      * @param id the policy identifier
      * @return a SimpleResponse object containing a success/fail message.
      */
@@ -91,6 +99,7 @@ public interface PolicyFrameworkService {
      * Pushes policies to the framework. This will perform the formal, context and
      * conflict validations. Por the policies that succeed, the corresponding
      * flow rules will be enforced in the underlying network.
+     *
      * @param policies list of policy rules
      * @return a SimpleResponse object containing a success/fail message.
      */
@@ -98,7 +107,8 @@ public interface PolicyFrameworkService {
 
     /**
      * Changes the priority of a policy
-     * @param id the id of the policy to change the priority
+     *
+     * @param id          the id of the policy to change the priority
      * @param newPriority the new priority for the policy
      * @return a SimpleResponse object containing a success/fail message.
      */
@@ -107,12 +117,14 @@ public interface PolicyFrameworkService {
     /**
      * Preprocesses a policy rule. Sets the policy state to NEW and converts the
      * policy conditions to DNF.
+     *
      * @param pr the policy rule to preprocess
      */
     void preprocess(PolicyRule pr);
 
     /**
      * Registers a policy type
+     *
      * @param policyType name of the new policy type
      * @return a SimpleResponse object containing a success/fail message.
      */
@@ -120,6 +132,7 @@ public interface PolicyFrameworkService {
 
     /**
      * Deregisters a policy type
+     *
      * @param policyType name of the policy type
      * @return a SimpleResponse object containing a success/fail message.
      */
@@ -127,6 +140,7 @@ public interface PolicyFrameworkService {
 
     /**
      * Lists the available policy types
+     *
      * @return a list of strings containing the policy types
      */
     List<String> getPolicyTypes();

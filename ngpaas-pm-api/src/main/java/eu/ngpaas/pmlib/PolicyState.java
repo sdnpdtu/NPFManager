@@ -1,4 +1,4 @@
-package eu.ngpaas.pmLib;
+package eu.ngpaas.pmlib;
 
 /**
  * Represents the state of a policy
@@ -40,6 +40,17 @@ public enum PolicyState {
         this.alternativeName = alternativeName;
     }
 
+    public static PolicyState fromString(String state) {
+
+        for (PolicyState s : values()) {
+            if (s.getCommonName().equalsIgnoreCase(state) ||
+                s.getAlternativeName().equalsIgnoreCase(state)) {
+                return s;
+            }
+        }
+
+        throw new IllegalArgumentException();
+    }
 
     public String getCommonName() {
         return commonName;
@@ -47,16 +58,6 @@ public enum PolicyState {
 
     public String getAlternativeName() {
         return this.alternativeName;
-    }
-
-    public static PolicyState fromString(String state) {
-
-        for(PolicyState s : values())
-            if(s.getCommonName().equalsIgnoreCase(state) ||
-                    s.getAlternativeName().equalsIgnoreCase(state))
-                return s;
-
-        throw new IllegalArgumentException();
     }
 
 

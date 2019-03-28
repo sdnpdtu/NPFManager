@@ -1,12 +1,13 @@
-package eu.ngpaas.pmLib;
+package eu.ngpaas.pmlib;
+
+import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Objects;
 
 /**
  * Represents a policy action
  */
-public class PolicyAction implements Comparable<PolicyAction>{
+public class PolicyAction implements Comparable<PolicyAction> {
 
     @JsonProperty("value")
     private String policyValue;
@@ -38,8 +39,7 @@ public class PolicyAction implements Comparable<PolicyAction>{
     public int compareTo(PolicyAction policyAction) {
         if (this.getPolicyVariable().equals(policyAction.getPolicyVariable())) {
             return this.getPolicyValue().compareTo(policyAction.getPolicyValue());
-        }
-        else{
+        } else {
             return this.getPolicyVariable().compareTo(policyAction.getPolicyVariable());
         }
     }
@@ -49,11 +49,15 @@ public class PolicyAction implements Comparable<PolicyAction>{
      */
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         PolicyAction that = (PolicyAction) o;
         return Objects.equals(policyValue, that.policyValue) &&
-                Objects.equals(policyVariable, that.policyVariable);
+               Objects.equals(policyVariable, that.policyVariable);
     }
 }
 

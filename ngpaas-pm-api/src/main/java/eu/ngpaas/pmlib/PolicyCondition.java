@@ -1,15 +1,15 @@
-package eu.ngpaas.pmLib;
+package eu.ngpaas.pmlib;
+
+import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Objects;
-
 /**
  * Represents a policy condition.
  */
-public class PolicyCondition implements Comparable<PolicyCondition>{
+public class PolicyCondition implements Comparable<PolicyCondition> {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     @JsonProperty("value")
@@ -42,8 +42,7 @@ public class PolicyCondition implements Comparable<PolicyCondition>{
     public int compareTo(PolicyCondition policyCondition) {
         if (this.getPolicyVariable().equals(policyCondition.getPolicyVariable())) {
             return this.getPolicyValue().compareTo(policyCondition.getPolicyValue());
-        }
-        else{
+        } else {
             return this.getPolicyVariable().compareTo(policyCondition.getPolicyVariable());
         }
     }
@@ -53,11 +52,15 @@ public class PolicyCondition implements Comparable<PolicyCondition>{
      */
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         PolicyCondition that = (PolicyCondition) o;
         return Objects.equals(policyValue, that.policyValue) &&
-                Objects.equals(policyVariable, that.policyVariable);
+               Objects.equals(policyVariable, that.policyVariable);
     }
 }
 
