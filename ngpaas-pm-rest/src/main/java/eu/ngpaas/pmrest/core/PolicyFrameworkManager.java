@@ -32,7 +32,9 @@ import eu.ngpaas.pmlib.PolicyRules;
 import eu.ngpaas.pmlib.PolicyState;
 import eu.ngpaas.pmlib.SimpleResponse;
 import org.apache.felix.scr.annotations.Activate;
+import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Deactivate;
+import org.apache.felix.scr.annotations.Service;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.onlab.osgi.DefaultServiceDirectory;
@@ -47,6 +49,8 @@ import org.slf4j.Logger;
 /**
  * Implements a manager of policies
  */
+@Component(immediate = true)
+@Service
 public class PolicyFrameworkManager implements PolicyFrameworkService {
 
     private final Logger log = getLogger(getClass());
@@ -131,7 +135,7 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
     @Override
     public SimpleResponse activatePolicyById(int id) {
 
-        /* Looks for a policy with the given id in pending state. 
+        /* Looks for a policy with the given id in pending state.
         If it is not found, returns an error message */
         PolicyRule p = getPolicyById(id, getPoliciesByState(PolicyState.PENDING));
         List messages = new ArrayList();
@@ -151,7 +155,7 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
         }
         try {
             lock.lock();
-            /* Apply the conflict validation to the policy we try to activate. 
+            /* Apply the conflict validation to the policy we try to activate.
             If fails, returns an error messsage */
             SimpleResponse sr = conflictValidator(p, getActivePolicies());
             messages = sr.getMessages();
@@ -164,7 +168,7 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
             lock.unlock();
         }
 
-        /* If it makes it until here, conflict and context validation succeed. 
+        /* If it makes it until here, conflict and context validation succeed.
         Thus, we enforce the policy */
         enforcePolicy(p);
         messages.add("Policy [" + String.valueOf(p.getId()) + "] activated.");
@@ -178,7 +182,7 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
         PolicyRule pr;
         try {
             lock.lock();
-            /* Looks for a policy with the given id in enforced state. 
+            /* Looks for a policy with the given id in enforced state.
             If it is not found, returns an error message */
             pr = getPolicyById(id, getActivePolicies());
 
@@ -267,7 +271,8 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
         PolicyRules activePolicies = getActivePolicies();
         CopyOnWriteArrayList<PolicyRule> policyRules = policies.getPolicyRules();
         // restResponse initialization
-        SimpleResponse sr, restResponse;
+        SimpleResponse sr;
+        SimpleResponse restResponse;
 
         List<Integer> ids = new CopyOnWriteArrayList<>();
         List<String> messages = new CopyOnWriteArrayList<>();
@@ -465,19 +470,17 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
         // If succeeds, changes the state to context validated
         newPolicyRule.setState(PolicyState.CONTEXT_VALIDATED);
 
-
-        // Finally, calls the conflict validator
+        // Finally, calls the conflict validator.
         restResponse = conflictValidator(newPolicyRule, activePolicies);
 
         // If it fails
         if (!restResponse.isSuccess()) {
-            // If has a code 2 it is a duplicated policy
+            // If has a code 2 it is a duplicated policy Otherwise, it is moved to the pending state and returns an
+            // error
+            //            message with the code 1 */
             if (restResponse.getCode() == 2) {
                 restResponse = new SimpleResponse(0, restResponse.getMessage(), false);
-            }
-            /* Otherwise, it is moved to the pending state and returns an error
-            message with the code 1 */
-            else {
+            } else {
                 newPolicyRule.setState(PolicyState.PENDING);
                 restResponse = new SimpleResponse(1, "Policy failed at conflict validation.", false);
             }
@@ -698,7 +701,7 @@ public class PolicyFrameworkManager implements PolicyFrameworkService {
                 crl.add(apRule);
             }
         }
-        /* Here crl should contain all conflicting rules. 
+        /* Here crl should contain all conflicting rules.
         Now we need to she which to keep, the new rule or the old rule set.*/
         SimpleResponse sr_resolution_result = ConflictValidator.conflictResolution(npRule, crl);
         if (sr_resolution_result.isSuccess()) {
